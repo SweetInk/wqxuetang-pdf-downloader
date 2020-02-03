@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+    <property name="charset" value="UTF-8"/>
+    <!-- log output to console -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%-5p] %d{yyyy-MM-dd HH:mm:ss} [%thread] %n %logger - %msg%n
+            </pattern>
+            <charset>${charset}</charset>
+        </encoder>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+    <logger name="com.itextpdf.layout.renderer.RootRenderer" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+</configuration>
