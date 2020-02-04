@@ -8,6 +8,7 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import online.githuboy.wqxuetang.pdfd.Constants;
+import online.githuboy.wqxuetang.pdfd.CookieStore;
 import online.githuboy.wqxuetang.pdfd.pojo.BookMetaInfo;
 import online.githuboy.wqxuetang.pdfd.pojo.Catalog;
 
@@ -67,6 +68,7 @@ public class ApiUtils {
 
         HttpResponse response = HttpRequest.get(url)
                 .charset(CharsetUtil.CHARSET_UTF_8)
+                .cookie(CookieStore.COOKIE)
                 .executeAsync();
         if (!response.isOk()) {
             throw new HttpException("Request url [{}] ,Server response error with status code: [{}]", url, response.getStatus());

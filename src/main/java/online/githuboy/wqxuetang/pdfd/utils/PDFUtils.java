@@ -45,13 +45,21 @@ public class PDFUtils {
         PdfWriter writer = new PdfWriter(FileUtil.touch(outFile));
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf);
+        boolean allInserted = true;
         //插入图片
         for (int i = 1; i <= pageNum; i++) {
             try {
                 document.add(new Image(ImageDataFactory.create(new URL("file:///" + workDir + "\\" + bookMetaInfo.getBid() + "\\" + i + ".jpg"))));
             } catch (Exception e) {
+                log.error("图片:{}损坏", i);
                 e.printStackTrace();
+                allInserted = false;
+                break;
             }
+        }
+        if (!allInserted) {
+            log.warn("生成PDF失败,删除损坏图片，重新运行程序");
+            return;
         }
         PdfOutline root = pdf.getOutlines(false);
         //构建目录概述

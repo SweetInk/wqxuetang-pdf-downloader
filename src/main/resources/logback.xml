@@ -2,11 +2,11 @@
 <configuration>
     <property name="charset" value="UTF-8"/>
     <!-- log output to console -->
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender" encoding="">
         <encoder>
             <pattern>[%-5p] %d{yyyy-MM-dd HH:mm:ss} [%thread] %n %logger - %msg%n
             </pattern>
-            <charset>${charset}</charset>
+            <charset>UTF8</charset>
         </encoder>
     </appender>
 
