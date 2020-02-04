@@ -1,5 +1,6 @@
 package online.githuboy.wqxuetang.pdfd.api;
 
+import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.http.HttpException;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
@@ -10,6 +11,7 @@ import online.githuboy.wqxuetang.pdfd.Constants;
 import online.githuboy.wqxuetang.pdfd.pojo.BookMetaInfo;
 import online.githuboy.wqxuetang.pdfd.pojo.Catalog;
 
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.List;
 
@@ -62,15 +64,19 @@ public class ApiUtils {
      * @return 响应体JSONObject
      */
     private static JSONObject getAndCheck(String url) {
-        HttpResponse response = HttpRequest.get(url).executeAsync();
+
+        HttpResponse response = HttpRequest.get(url)
+                .charset(CharsetUtil.CHARSET_UTF_8)
+                .executeAsync();
         if (!response.isOk()) {
             throw new HttpException("Request url [{}] ,Server response error with status code: [{}]", url, response.getStatus());
         } else {
-            JSONObject data = JSONUtil.parseObj(new String(response.bodyBytes()));
-            int errcode = data.getInt("errcode");
-            if (errcode != 0) {
-                String errmsg = data.getStr("errmsg");
-                throw new RuntimeException("Request url:" + url + " failed,errorMessage:" + errmsg);
+            String test = new String(response.bodyBytes(), StandardCharsets.UTF_8);
+            JSONObject data = JSONUtil.parseObj(test);
+            int errCode = data.getInt("errcode");
+            if (errCode != 0) {
+                String errMsg = data.getStr("errmsg");
+                throw new RuntimeException("Request url:" + url + " failed,errorMessage:" + errMsg);
             }
             return data;
         }
