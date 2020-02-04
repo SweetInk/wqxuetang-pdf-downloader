@@ -2,7 +2,10 @@
 
 文泉学堂PDF下载器
 
-本程序仅供学习交流使用,切勿用于商业活动
+## 本程序仅供学习交流使用,切勿用于商业活动
+## 本程序仅供学习交流使用,切勿用于商业活动
+## 本程序仅供学习交流使用,切勿用于商业活动
+## 下载后的图书PDF请在24小时内删除，切勿传播，如果您觉得图书不错，请购买正版支持！！！
 
 # 构建
 ## 所需环境
@@ -32,20 +35,24 @@ mvn package
 
 1. 打开文泉学堂免费阅读[主页](https://lib-nuanxin.wqxuetang.com/#/)
 
-2. 搜索你想要下载的图书,然后打开书的主页,这里以https://lib-nuanxin.wqxuetang.com/#/Book/`2175744`为例，这里我们获取到了书的编号,`2175744`
+2. 登录网站
 
-3. 使用工具
+3. 搜索你想要下载的图书,然后打开书的主页,这里以https://lib-nuanxin.wqxuetang.com/#/Book/`2175744`为例，这里我们获取到了书的编号,`2175744`
+
+4. 使用工具
 ```shell 
-java -jar pdfd.jar <bookId> <workDir>
+java -jar pdfd.jar -b <arg> -c <arg> -w <arg>
+
 ```
 *参数说明*
 
-* `bookId`  上述获取到的书籍编号
-* `workDir` PDF保存的路径
+* `b`  上述获取到的书籍编号
+* `c` 成功登录网站后,PHPSESSID的值
+* `w` 工作目录
 
 eg:
 ```shell script
-java -jar pdfd.jar 2175744 d:\\temp
+java -jar pdfd.jar -b 2175744 -w d:\\temp -c abcdefghijklmn
 ```
 这时候等个几十秒后你就会在`d:\\temp\\pdfTest\\`看到下载好的PDF文件.
 
