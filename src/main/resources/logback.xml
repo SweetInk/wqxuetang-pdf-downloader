@@ -3,7 +3,7 @@
     <!-- log output to console -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender" encoding="">
         <encoder>
-            <pattern>[%-5p] %d{yyyy-MM-dd HH:mm:ss} [%thread] %n %logger - %msg%n
+            <pattern>[%-5p] %d{yyyy-MM-dd HH:mm:ss} [%thread] %logger - %msg%n
             </pattern>
         </encoder>
     </appender>

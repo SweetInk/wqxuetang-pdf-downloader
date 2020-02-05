@@ -23,7 +23,6 @@ import online.githuboy.wqxuetang.pdfd.pojo.Catalog;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 
 /**
@@ -40,8 +39,14 @@ public class PDFUtils {
 
     public static void gen(BookMetaInfo bookMetaInfo, List<Catalog> catalogs, String workDir) throws IOException {
         String bookName = bookMetaInfo.getName();
+        String bookId = bookMetaInfo.getBid();
         int pageNum = bookMetaInfo.getPages();
-        File outFile = FileUtil.file(workDir, "pdfTest\\" + bookName + ".pdf");
+        File basePdfDir = new File(workDir, "pdfTest");
+        File baseImageDir = new File(workDir, bookId);
+        if (!basePdfDir.exists()) {
+            basePdfDir.mkdirs();
+        }
+        File outFile = FileUtil.file(new File(basePdfDir, bookName + "_" + bookId + ".pdf"));
         PdfWriter writer = new PdfWriter(FileUtil.touch(outFile));
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf);
@@ -49,7 +54,8 @@ public class PDFUtils {
         //插入图片
         for (int i = 1; i <= pageNum; i++) {
             try {
-                document.add(new Image(ImageDataFactory.create(new URL("file:///" + workDir + "\\" + bookMetaInfo.getBid() + "\\" + i + ".jpg"))));
+                File imageFile = new File(baseImageDir, i + ".jpg");
+                document.add(new Image(ImageDataFactory.create(imageFile.getAbsolutePath())));
             } catch (Exception e) {
                 log.error("图片:{}损坏", i);
                 e.printStackTrace();
@@ -79,10 +85,11 @@ public class PDFUtils {
         PdfWriter writer = new PdfWriter(tempOutFile);
         PdfDocument pdf = new PdfDocument(reader, writer);
         Document document = new Document(pdf);
-        PdfFont font = PdfFontFactory.createFont("c:\\windows\\fonts\\msyh.ttc,1", PdfEncodings.IDENTITY_H, true);
+        PdfFont f2 = PdfFontFactory.createFont("STSong-Light", "UniGB-UCS2-H", true);
+//        PdfFont font = PdfFontFactory.createFont("c:\\windows\\fonts\\msyh.ttc,1", PdfEncodings.IDENTITY_H, true);
         int numberOfPages = pdf.getNumberOfPages();
         PdfExtGState gs1 = new PdfExtGState().setFillOpacity(0.2f);
-        Paragraph paragraph = new Paragraph("试读样张,请支持正版").setFont(font).setFontSize(30);
+        Paragraph paragraph = new Paragraph("试读样张,请支持正版").setFont(f2).setFontSize(30);
         for (int i = 1; i <= numberOfPages; i++) {
             PdfPage pdfPage = pdf.getPage(i);
             Rectangle pageSize = pdfPage.getPageSize();

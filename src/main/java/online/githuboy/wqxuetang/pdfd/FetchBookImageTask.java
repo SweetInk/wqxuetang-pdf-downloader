@@ -3,7 +3,6 @@ package online.githuboy.wqxuetang.pdfd;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import online.githuboy.wqxuetang.pdfd.utils.JwtUtils;
 import online.githuboy.wqxuetang.pdfd.utils.ThreadPoolUtils;
@@ -25,39 +24,41 @@ public class FetchBookImageTask implements Runnable {
     private final static int maxRetryCount = 10;
     private String bookId;
     private int pageNumber;
-    private String workDir;
     private CountDownLatch latch;
-    @Setter
-    private String k;
+    private File baseDir;
+
     private AtomicInteger retryCount = new AtomicInteger(0);
 
-    public FetchBookImageTask(String workDir, String bookId, int pageNumber, String k, CountDownLatch latch) {
-        this.workDir = workDir;
+    public FetchBookImageTask(String workDir, String bookId, int pageNumber, CountDownLatch latch) {
         this.bookId = bookId;
         this.pageNumber = pageNumber;
-        this.k = k;
         this.latch = latch;
+        this.baseDir = new File(workDir, bookId);
+        if (!this.baseDir.exists()) {
+            this.baseDir.mkdirs();
+        }
     }
 
     @Override
     public void run() {
+        File outFile = null;
         try {
-            String key = JwtUtils.getJwt(bookId, String.valueOf(this.pageNumber), k);
+            String key = JwtUtils.getJwt(bookId, String.valueOf(this.pageNumber), AppContext.getBookKey(bookId));
             HttpResponse response = HttpRequest.get(MessageFormat.format(Constants.BOOK_IMG, this.bookId, this.pageNumber, key))
                     .header(cn.hutool.http.Header.REFERER, "https://lib-nuanxin.wqxuetang.com/read/pdf/" + bookId)
                     .cookie(CookieStore.COOKIE)
-                    .timeout(10000)
+                    .timeout(150000)
                     .executeAsync();
             if (!response.isOk()) {
                 log.error("Get page:{} img failed,Server response error with status code:{}", this.pageNumber, response.getStatus());
                 retry();
             } else {
-                File outFile = FileUtil.file(workDir, bookId + "\\" + this.pageNumber + ".jpg");
-
+                outFile = FileUtil.file(new File(baseDir, this.pageNumber + ".jpg"));
                 long size = response.writeBody(outFile, null);
                 if (size <= Constants.IMG_INVALID_SIZE
                         || size == Constants.IMG_LOADING_SIZE) {
                     log.info("图片错误:{}", this.pageNumber);
+                    FileUtil.del(outFile);
                     retry();
                 } else {
                     AppContext.getImageStatusMapping().put(String.valueOf(pageNumber), true);
@@ -65,6 +66,8 @@ public class FetchBookImageTask implements Runnable {
                 }
             }
         } catch (Exception e) {
+            if (null != outFile)
+                FileUtil.del(outFile);
             log.error("图片:{} 下载异常:{}", pageNumber, e.getMessage());
             retry();
         }

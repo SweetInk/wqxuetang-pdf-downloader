@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -69,18 +70,27 @@ public class App {
         Collections.sort(strings);
         //之前成功下载的图片将会跳过
         List<Integer> failedImageList = pageMap.entrySet().stream().filter(entry -> !strings.contains(entry.getKey())).map(Map.Entry::getValue).collect(Collectors.toList());
-
+        AppContext.setBookKey(bookId, k);
         if (failedImageList.size() <= 0) {
             log.info("All image downloaded");
             log.info("Ready for generate PDF");
             PDFUtils.gen(metaInfo, catalogs, workDir);
             log.info("All finished take :{}s", (System.currentTimeMillis() - start) / 1000);
         } else {
+            ThreadPoolUtils.getScheduledExecutorService().schedule(() -> {
+                log.info("清理book:{} key", bookId);
+                try {
+                    String bookKey = ApiUtils.getBookKey(bookId);
+                    AppContext.setBookKey(bookId, bookKey);
+                } catch (Exception e) {
+                    log.error("Cookie已失效，或者服务不可用 ,errorMessage:{}", e.getMessage());
+                }
+            }, 4, TimeUnit.MINUTES);
             ThreadPoolExecutor executor = ThreadPoolUtils.getExecutor();
             CountDownLatch latch = new CountDownLatch(failedImageList.size());
             log.info("Start download image");
             for (Integer page : failedImageList) {
-                FetchBookImageTask task = new FetchBookImageTask(workDir, bookId, page, k, latch);
+                FetchBookImageTask task = new FetchBookImageTask(workDir, bookId, page, latch);
                 executor.execute(task);
             }
             latch.await();
@@ -98,6 +108,7 @@ public class App {
                 });
                 log.info("请重新运行本程序下载");
             }
+            ThreadPoolUtils.getScheduledExecutorService().shutdown();
             executor.shutdown();
         }
     }

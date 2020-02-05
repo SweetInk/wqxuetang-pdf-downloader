@@ -10,8 +10,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AppContext {
     private static ConcurrentHashMap<String, Boolean> imageStatusMapping = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<String, String> imgKCache = new ConcurrentHashMap<>();
 
     public static ConcurrentHashMap<String, Boolean> getImageStatusMapping() {
         return imageStatusMapping;
+    }
+
+    public static String getBookKey(String bookId) {
+        return imgKCache.get(bookId);
+    }
+
+    public static void setBookKey(String bookId, String key) {
+        imgKCache.put(bookId, key);
     }
 }
