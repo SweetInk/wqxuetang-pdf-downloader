@@ -37,7 +37,7 @@ mvn package
 
 2. 登录网站
 
-3. 搜索你想要下载的图书,然后打开书的主页,这里以https://lib-nuanxin.wqxuetang.com/#/Book/`2175744`为例，这里我们获取到了书的编号,`2175744`
+3. 搜索你想要下载的图书,然后打开书的主页,这里以*https://lib-nuanxin.wqxuetang.com/#/Book/`2175744`* 为例，我们获取到了书的编号:`2175744`
 
 4. 使用工具
 ```shell 
