@@ -42,8 +42,10 @@ public class FetchBookImageTask implements Runnable {
     @Override
     public void run() {
         File outFile = null;
+
         try {
             String key = JwtUtils.getJwt(bookId, String.valueOf(this.pageNumber), AppContext.getBookKey(bookId));
+            long start = System.currentTimeMillis();
             HttpResponse response = HttpRequest.get(MessageFormat.format(Constants.BOOK_IMG, this.bookId, this.pageNumber, key))
                     .header(cn.hutool.http.Header.REFERER, "https://lib-nuanxin.wqxuetang.com/read/pdf/" + bookId)
                     .cookie(CookieStore.COOKIE)
@@ -61,6 +63,7 @@ public class FetchBookImageTask implements Runnable {
                     FileUtil.del(outFile);
                     retry();
                 } else {
+                    log.info("page:{}下载完成,耗时:{}s", this.pageNumber, (System.currentTimeMillis() - start) / 1000.f);
                     AppContext.getImageStatusMapping().put(String.valueOf(pageNumber), true);
                     latch.countDown();
                 }
@@ -68,6 +71,7 @@ public class FetchBookImageTask implements Runnable {
         } catch (Exception e) {
             if (null != outFile)
                 FileUtil.del(outFile);
+
             log.error("图片:{} 下载异常:{}", pageNumber, e.getMessage());
             retry();
         }
@@ -83,7 +87,6 @@ public class FetchBookImageTask implements Runnable {
                 e.printStackTrace();
             }
             ThreadPoolUtils.getExecutor().submit(this);
-
         } else {
             log.warn("page:{} 图片获取进行第:{} 次重试，依旧失败,放弃获取", pageNumber, count);
             AppContext.getImageStatusMapping().put(String.valueOf(pageNumber), false);

@@ -11,10 +11,7 @@ import org.apache.commons.cli.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -64,10 +61,21 @@ public class App {
         File tempSaveDir = new File(workDir, bookId);
         if (!tempSaveDir.exists())
             tempSaveDir.mkdirs();
-        List<Integer> strings = FileUtil.listFileNames(workDir + "\\" + bookId).stream().map(
+       /* FileUtil.listFileNames(tempSaveDir.getAbsolutePath()).forEach(fileName->{
+            System.out.println(fileName);
+        });*/
+        // 预先清理无效的图片
+        Arrays.stream(Objects.requireNonNull(tempSaveDir.listFiles())).forEach(file -> {
+            long size = file.length();
+            if (size <= Constants.IMG_INVALID_SIZE
+                    || size == Constants.IMG_LOADING_SIZE) {
+                FileUtil.del(file);
+            }
+        });
+        //列出已经下载好的图片列表
+        List<Integer> strings = FileUtil.listFileNames(tempSaveDir.getAbsolutePath()).stream().map(
                 fileName -> Integer.parseInt(fileName.substring(0, fileName.lastIndexOf('.')))
-        ).collect(Collectors.toList());
-        Collections.sort(strings);
+        ).sorted().collect(Collectors.toList());
         //之前成功下载的图片将会跳过
         List<Integer> failedImageList = pageMap.entrySet().stream().filter(entry -> !strings.contains(entry.getKey())).map(Map.Entry::getValue).collect(Collectors.toList());
         AppContext.setBookKey(bookId, k);
