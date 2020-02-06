@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>online.githuboy</groupId>
     <artifactId>PDFDownloader</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -28,7 +28,11 @@
             <artifactId>hutool-json</artifactId>
             <version>5.1.1</version>
         </dependency>
-
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-setting</artifactId>
+            <version>5.1.1</version>
+        </dependency>
         <!-- JWT-->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
