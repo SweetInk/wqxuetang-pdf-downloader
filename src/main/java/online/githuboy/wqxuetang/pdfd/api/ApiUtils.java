@@ -74,13 +74,20 @@ public class ApiUtils {
             throw new HttpException("Request url [{}] ,Server response error with status code: [{}]", url, response.getStatus());
         } else {
             String test = new String(response.bodyBytes(), StandardCharsets.UTF_8);
-            JSONObject data = JSONUtil.parseObj(test);
+            JSONObject data;
+            try {
+                data = JSONUtil.parseObj(test);
+            } catch (Exception e) {
+                throw new RuntimeException("服务器开启了Ali滑动验证，请求失败:" + test);
+            }
             int errCode = data.getInt("errcode");
             if (errCode != 0) {
                 String errMsg = data.getStr("errmsg");
                 throw new RuntimeException("Request url:" + url + " failed,errorMessage:" + errMsg);
             }
             return data;
+
+
         }
     }
 
