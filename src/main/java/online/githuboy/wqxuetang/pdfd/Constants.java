@@ -30,4 +30,8 @@ public class Constants {
      * 图片如果下载失败，图片内容固定5字节
      */
     public static final int IMG_INVALID_SIZE = 5;
+
+    public static final int MAX_RETRY_COUNT = 2;
+
+    public static final String JPG_SUFFIX = ".jpg";
 }

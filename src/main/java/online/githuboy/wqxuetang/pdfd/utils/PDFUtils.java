@@ -18,6 +18,7 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.property.TextAlignment;
 import com.itextpdf.layout.property.VerticalAlignment;
 import lombok.extern.slf4j.Slf4j;
+import online.githuboy.wqxuetang.pdfd.Constants;
 import online.githuboy.wqxuetang.pdfd.pojo.BookMetaInfo;
 import online.githuboy.wqxuetang.pdfd.pojo.Catalog;
 
@@ -38,7 +39,8 @@ public class PDFUtils {
     }
 
     public static void gen(BookMetaInfo bookMetaInfo, List<Catalog> catalogs, String workDir) throws IOException {
-        String bookName = bookMetaInfo.getName();
+        //Issue https://github.com/SweetInk/wqxuetang-pdf-downloader/issues/7
+        String bookName = FileUtil.cleanInvalid(bookMetaInfo.getName());
         String bookId = bookMetaInfo.getBid();
         int pageNum = bookMetaInfo.getPages();
         File basePdfDir = new File(workDir, "pdfTest");
@@ -54,7 +56,7 @@ public class PDFUtils {
         //插入图片
         for (int i = 1; i <= pageNum; i++) {
             try {
-                File imageFile = new File(baseImageDir, i + ".jpg");
+                File imageFile = new File(baseImageDir, i + Constants.JPG_SUFFIX);
                 document.add(new Image(ImageDataFactory.create(imageFile.getAbsolutePath())));
             } catch (Exception e) {
                 log.error("图片:{}损坏", i);
