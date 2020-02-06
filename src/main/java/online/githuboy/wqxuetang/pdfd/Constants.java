@@ -34,4 +34,6 @@ public class Constants {
     public static final int MAX_RETRY_COUNT = 2;
 
     public static final String JPG_SUFFIX = ".jpg";
+
+    public static final String DEFAULT_CONFIG_FILE = "config.properties";
 }

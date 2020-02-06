@@ -19,14 +19,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 2020年2月3日
  */
 @Slf4j
-
 public class FetchBookImageTask implements Runnable {
-    private final static int maxRetryCount = 10;
     private String bookId;
     private int pageNumber;
     private CountDownLatch latch;
     private File baseDir;
-
     private AtomicInteger retryCount = new AtomicInteger(0);
 
     public FetchBookImageTask(String workDir, String bookId, int pageNumber, CountDownLatch latch) {
@@ -42,12 +39,20 @@ public class FetchBookImageTask implements Runnable {
     @Override
     public void run() {
         File outFile = null;
-
         try {
+            if (AppContext.counter.get() >= AppContext.getConfig().getMaxRequestThreshold()) {
+                log.info("休眠{}秒再试", AppContext.getConfig().getWaitingSeconds());
+                Thread.sleep(AppContext.getConfig().getWaitingSeconds());
+                log.info("任务继续执行");
+                AppContext.counter.set(0);
+            }
             String key = JwtUtils.getJwt(bookId, String.valueOf(this.pageNumber), AppContext.getBookKey(bookId));
             long start = System.currentTimeMillis();
-            HttpResponse response = HttpRequest.get(MessageFormat.format(Constants.BOOK_IMG, this.bookId, this.pageNumber, key))
-                    .header(cn.hutool.http.Header.REFERER, "https://lib-nuanxin.wqxuetang.com/read/pdf/" + bookId)
+            String url = MessageFormat.format(Constants.BOOK_IMG, this.bookId, this.pageNumber, key);
+            String referUrl = "https://lib-nuanxin.wqxuetang.com/read/pdf/" + bookId;
+            AppContext.counter.incrementAndGet();
+            HttpResponse response = HttpRequest.get(url)
+                    .header(cn.hutool.http.Header.REFERER, referUrl)
                     .cookie(CookieStore.COOKIE)
                     .timeout(150000)
                     .executeAsync();
@@ -55,7 +60,7 @@ public class FetchBookImageTask implements Runnable {
                 log.error("Get page:{} img failed,Server response error with status code:{}", this.pageNumber, response.getStatus());
                 retry();
             } else {
-                outFile = FileUtil.file(new File(baseDir, this.pageNumber + ".jpg"));
+                outFile = FileUtil.file(new File(baseDir, this.pageNumber + Constants.JPG_SUFFIX));
                 long size = response.writeBody(outFile, null);
                 if (size <= Constants.IMG_INVALID_SIZE
                         || size == Constants.IMG_LOADING_SIZE) {
@@ -71,15 +76,20 @@ public class FetchBookImageTask implements Runnable {
         } catch (Exception e) {
             if (null != outFile)
                 FileUtil.del(outFile);
-
             log.error("图片:{} 下载异常:{}", pageNumber, e.getMessage());
             retry();
+        } finally {
+            try {
+                Thread.sleep(AppContext.getConfig().getDefaultSleepTime());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     private void retry() {
         int count = retryCount.getAndIncrement();
-        if (count < maxRetryCount) {
+        if (count < Constants.MAX_RETRY_COUNT) {
             log.info("page:{} 图片获取进行第:{} 次重试", pageNumber, (count + 1));
             try {
                 Thread.sleep(count * 700 + 500);

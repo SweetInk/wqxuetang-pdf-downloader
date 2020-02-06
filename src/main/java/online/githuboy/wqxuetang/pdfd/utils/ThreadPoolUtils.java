@@ -1,5 +1,6 @@
 package online.githuboy.wqxuetang.pdfd.utils;
 
+import java.util.Optional;
 import java.util.concurrent.*;
 
 /**
@@ -10,14 +11,18 @@ import java.util.concurrent.*;
  */
 public class ThreadPoolUtils {
 
-    private static int coreSize = Runtime.getRuntime().availableProcessors() * 2;
+    private static ThreadPoolExecutor executor;
+    private static ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(2);
 
-    private static ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
-    private static ThreadPoolExecutor executor = new ThreadPoolExecutor(coreSize,
-            coreSize,
-            0,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>());
+    public static void init(Integer coreSize) {
+        int actualSize = Optional.ofNullable(coreSize).orElse(1);
+        executor = new ThreadPoolExecutor(actualSize,
+                actualSize,
+                0,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>());
+    }
+
 
     private ThreadPoolUtils() {
     }
