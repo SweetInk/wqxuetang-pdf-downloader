@@ -1,15 +1,21 @@
 package online.githuboy.wqxuetang.pdfd;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.http.Header;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
+import cn.hutool.http.HttpUtil;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import online.githuboy.wqxuetang.pdfd.utils.JwtUtils;
 import online.githuboy.wqxuetang.pdfd.utils.ThreadPoolUtils;
 
 import java.io.File;
 import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -24,13 +30,18 @@ public class FetchBookImageTask implements Runnable {
     private int pageNumber;
     private CountDownLatch latch;
     private File baseDir;
+    /**
+     * 分区号
+     */
+    @Setter
+    private String volumeNumber;
     private AtomicInteger retryCount = new AtomicInteger(0);
 
-    public FetchBookImageTask(String workDir, String bookId, int pageNumber, CountDownLatch latch) {
+    public FetchBookImageTask(String imageTempDir, String bookId, int pageNumber, CountDownLatch latch) {
         this.bookId = bookId;
         this.pageNumber = pageNumber;
         this.latch = latch;
-        this.baseDir = new File(workDir, bookId);
+        this.baseDir = FileUtil.file(imageTempDir);
         if (!this.baseDir.exists()) {
             this.baseDir.mkdirs();
         }
@@ -42,29 +53,42 @@ public class FetchBookImageTask implements Runnable {
         try {
             if (AppContext.counter.get() >= AppContext.getConfig().getMaxRequestThreshold()) {
                 log.info("休眠{}秒再试", AppContext.getConfig().getWaitingSeconds());
-                Thread.sleep(AppContext.getConfig().getWaitingSeconds());
+                TimeUnit.SECONDS.sleep(AppContext.getConfig().getWaitingSeconds());
                 log.info("任务继续执行");
                 AppContext.counter.set(0);
             }
             String key = JwtUtils.getJwt(bookId, String.valueOf(this.pageNumber), AppContext.getBookKey(bookId));
             long start = System.currentTimeMillis();
-            String url = MessageFormat.format(Constants.BOOK_IMG, this.bookId, this.pageNumber, key);
+            String url = MessageFormat.format(Constants.BOOK_IMG, this.bookId, this.pageNumber);
+            Map<String, String> paramMap = new HashMap<>();
+            paramMap.put("k", key);
+            if (null != volumeNumber) {
+                paramMap.put("v", volumeNumber);
+            }
+            url = url + '?' + HttpUtil.toParams(paramMap);
             String referUrl = "https://lib-nuanxin.wqxuetang.com/read/pdf/" + bookId;
             AppContext.counter.incrementAndGet();
             HttpResponse response = HttpRequest.get(url)
                     .header(cn.hutool.http.Header.REFERER, referUrl)
                     .cookie(CookieStore.COOKIE)
+                    .header(Header.HOST, "lib-nuanxin.wqxuetang.com")
+                    .header("Sec-Fetch-Dest", "empty")
+                    .header("Sec-Fetch-Mode", "cors")
+                    .header("User", "bapkg/com.bookask.wqxuetang baver/1.1.1")
+                    .header(Header.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4041.0 Safari/537.36 Edg/81.0.410.1")
                     .timeout(150000)
                     .executeAsync();
             if (!response.isOk()) {
                 log.error("Get page:{} img failed,Server response error with status code:{}", this.pageNumber, response.getStatus());
+                log.info("休眠5s");
+                Thread.sleep(5000);
                 retry();
             } else {
-                outFile = FileUtil.file(new File(baseDir, this.pageNumber + Constants.JPG_SUFFIX));
+                outFile = FileUtil.file(baseDir, this.pageNumber + Constants.JPG_SUFFIX);
                 long size = response.writeBody(outFile, null);
                 if (size <= Constants.IMG_INVALID_SIZE
                         || size == Constants.IMG_LOADING_SIZE) {
-                    log.info("图片错误:{}", this.pageNumber);
+                    log.info("Page:{} 下载的图片无效，大小为:{} byte", this.pageNumber, size);
                     FileUtil.del(outFile);
                     retry();
                 } else {

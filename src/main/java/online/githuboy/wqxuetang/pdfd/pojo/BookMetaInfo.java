@@ -2,6 +2,8 @@ package online.githuboy.wqxuetang.pdfd.pojo;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 书籍元数据实体
  * <p>
@@ -46,4 +48,14 @@ public class BookMetaInfo {
      * 页码数
      */
     private Integer pages;
+    /**
+     * 分册编号
+     */
+    private String number;
+
+    /**
+     * 书籍含多册信息
+     */
+    private List<BookMetaInfo> volumeList;
+
 }

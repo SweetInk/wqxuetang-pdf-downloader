@@ -5,7 +5,7 @@ package online.githuboy.wqxuetang.pdfd;
  */
 public class Constants {
 
-    public static final String BOOK_CATE = "https://lib-nuanxin.wqxuetang.com/v1/book/catatree?bid={0}";
+    public static final String BOOK_CATE = "https://lib-nuanxin.wqxuetang.com/v1/book/catatree";
 
     public static final String BOOK_META = "https://lib-nuanxin.wqxuetang.com/v1/read/initread?bid={0}";
 
@@ -16,7 +16,7 @@ public class Constants {
      * 1 -> pageNum
      * 2 -> key
      */
-    public static final String BOOK_IMG = "https://lib-nuanxin.wqxuetang.com/page/img/{0}/{1}?k={2}";
+    public static final String BOOK_IMG = "https://lib-nuanxin.wqxuetang.com/page/img/{0}/{1}";
     /**
      * JWT签名密钥
      */

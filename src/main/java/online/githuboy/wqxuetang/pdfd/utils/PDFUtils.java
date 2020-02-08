@@ -1,6 +1,7 @@
 package online.githuboy.wqxuetang.pdfd.utils;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.StrUtil;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.font.PdfFont;
@@ -18,6 +19,7 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.property.TextAlignment;
 import com.itextpdf.layout.property.VerticalAlignment;
 import lombok.extern.slf4j.Slf4j;
+import online.githuboy.wqxuetang.pdfd.AppContext;
 import online.githuboy.wqxuetang.pdfd.Constants;
 import online.githuboy.wqxuetang.pdfd.pojo.BookMetaInfo;
 import online.githuboy.wqxuetang.pdfd.pojo.Catalog;
@@ -38,17 +40,23 @@ public class PDFUtils {
     private PDFUtils() {
     }
 
-    public static void gen(BookMetaInfo bookMetaInfo, List<Catalog> catalogs, String workDir) throws IOException {
+    public static void gen(BookMetaInfo bookMetaInfo, List<Catalog> catalogs, String imageBaseDir) throws IOException {
         //Issue https://github.com/SweetInk/wqxuetang-pdf-downloader/issues/7
         String bookName = FileUtil.cleanInvalid(bookMetaInfo.getName());
         String bookId = bookMetaInfo.getBid();
         int pageNum = bookMetaInfo.getPages();
-        File basePdfDir = new File(workDir, "pdfTest");
-        File baseImageDir = new File(workDir, bookId);
+        File basePdfDir = new File(AppContext.getConfig().getWorkPath(), "pdfTest");
+        File baseImageDir = FileUtil.file(imageBaseDir);
         if (!basePdfDir.exists()) {
             basePdfDir.mkdirs();
         }
-        File outFile = FileUtil.file(new File(basePdfDir, bookName + "_" + bookId + ".pdf"));
+        String fileName = null;
+        if (StrUtil.isBlank(bookMetaInfo.getNumber())) {
+            fileName = bookName + "_" + bookId + ".pdf";
+        } else {
+            fileName = bookName + "_" + bookMetaInfo.getNumber() + "_" + bookId + ".pdf";
+        }
+        File outFile = FileUtil.file(basePdfDir, fileName);
         PdfWriter writer = new PdfWriter(FileUtil.touch(outFile));
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf);
@@ -83,12 +91,11 @@ public class PDFUtils {
 
     private static void addWatermark(File file) throws IOException {
         PdfReader reader = new PdfReader(file);
-        File tempOutFile = new File(file.getParent(), "out.pdf");
+        File tempOutFile = new File(file.getParent(), System.currentTimeMillis() + "_out.pdf");
         PdfWriter writer = new PdfWriter(tempOutFile);
         PdfDocument pdf = new PdfDocument(reader, writer);
         Document document = new Document(pdf);
         PdfFont f2 = PdfFontFactory.createFont("STSong-Light", "UniGB-UCS2-H", true);
-//        PdfFont font = PdfFontFactory.createFont("c:\\windows\\fonts\\msyh.ttc,1", PdfEncodings.IDENTITY_H, true);
         int numberOfPages = pdf.getNumberOfPages();
         PdfExtGState gs1 = new PdfExtGState().setFillOpacity(0.2f);
         Paragraph paragraph = new Paragraph("试读样张,请支持正版").setFont(f2).setFontSize(30);

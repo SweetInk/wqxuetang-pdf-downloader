@@ -4,6 +4,8 @@ import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.http.HttpException;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
+import cn.hutool.http.HttpUtil;
+import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +16,10 @@ import online.githuboy.wqxuetang.pdfd.pojo.Catalog;
 
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * API 请求工具
@@ -32,7 +37,15 @@ public class ApiUtils {
      */
     public static BookMetaInfo getBookMetaInfo(String bid) {
         String url = MessageFormat.format(Constants.BOOK_META, bid);
-        return JSONUtil.toBean(getAndCheck(url).getJSONObject("data"), BookMetaInfo.class);
+        JSONObject data = getAndCheck(url).getJSONObject("data");
+        BookMetaInfo metaInfo = JSONUtil.toBean(getAndCheck(url).getJSONObject("data"), BookMetaInfo.class);
+        JSONArray volume_list = data.getJSONArray("volume_list");
+        if (null != volume_list && volume_list.size() > 0) {
+            metaInfo.setVolumeList(JSONUtil.toList(volume_list, BookMetaInfo.class));
+        } else {
+            metaInfo.setVolumeList(Collections.emptyList());
+        }
+        return metaInfo;
     }
 
     /**
@@ -41,8 +54,14 @@ public class ApiUtils {
      * @param bid 书籍id
      * @return 书籍目录列表
      */
-    public static List<Catalog> getBookCatalog(String bid) {
-        String url = MessageFormat.format(Constants.BOOK_CATE, bid);
+    public static List<Catalog> getBookCatalog(String bid, String volumeNo) {
+        Map<String, String> paramMap = new HashMap<>();
+        paramMap.put("bid", bid);
+        if (null != volumeNo) {
+            paramMap.put("volume_no", volumeNo);
+        }
+        String params = HttpUtil.toParams(paramMap);
+        String url = Constants.BOOK_CATE + '?' + params;
         return JSONUtil.toList(getAndCheck(url).getJSONArray("data"), Catalog.class);
     }
 
@@ -93,7 +112,7 @@ public class ApiUtils {
 
     public static void main(String[] args) {
         String bookId = "2175744";
-        List<Catalog> bookCatalog = getBookCatalog(bookId);
+        List<Catalog> bookCatalog = getBookCatalog(bookId, null);
         log.info("catalogs:{}", bookCatalog);
         log.info("book key:{}", getBookKey(bookId));
         log.info("meta info:{}", getBookMetaInfo(bookId));
