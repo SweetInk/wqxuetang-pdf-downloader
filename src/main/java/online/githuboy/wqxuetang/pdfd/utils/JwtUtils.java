@@ -44,7 +44,7 @@ public class JwtUtils {
                 .claim("p", pageNumber)
                 .claim("t", System.currentTimeMillis())
                 .claim("b", bookId)
-                .claim("w", "200")
+                .claim("w", 1e3)
                 .claim("k", k)
                 .claim("iat", System.currentTimeMillis() / 1000)
 //                .signWith(new SecretKeySpec(Constants.JWT_SECRET.getBytes(),SignatureAlgorithm.HS256.getJcaName()))
