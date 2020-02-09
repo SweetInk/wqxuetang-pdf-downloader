@@ -20,7 +20,7 @@ public class ThreadPoolUtils {
                 actualSize,
                 0,
                 TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>());
+                new LinkedBlockingQueue<>(), new NameTheadFactory("fetch-image"));
     }
 
 

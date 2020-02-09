@@ -2,15 +2,14 @@ package online.githuboy.wqxuetang.pdfd;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.setting.dialect.Props;
 import lombok.extern.slf4j.Slf4j;
 import online.githuboy.wqxuetang.pdfd.api.ApiUtils;
 import online.githuboy.wqxuetang.pdfd.pojo.BookMetaInfo;
 import online.githuboy.wqxuetang.pdfd.pojo.Catalog;
 import online.githuboy.wqxuetang.pdfd.pojo.Config;
+import online.githuboy.wqxuetang.pdfd.utils.Cli;
 import online.githuboy.wqxuetang.pdfd.utils.PDFUtils;
 import online.githuboy.wqxuetang.pdfd.utils.ThreadPoolUtils;
-import org.apache.commons.cli.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,66 +22,42 @@ import java.util.stream.Collectors;
 @Slf4j
 public class App {
 
-    public static void main(String[] args) throws IOException, InterruptedException, ParseException {
+    public static void main(String[] args) throws IOException, InterruptedException {
+        App app = new App();
+        Cli cli = new Cli();
+        cli.get(args);
+        app.start();
+    }
 
-        Options options = new Options();
-        options.addOption(Option.builder("b").hasArg(true).required().desc("The id of book").build());
-        options.addOption(Option.builder("c").hasArg(true).desc("Config file path.").build());
-        CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = null;
-        try {
-            cmd = parser.parse(options, args);
-        } catch (ParseException e) {
-            HelpFormatter formatter = new HelpFormatter();
-            String footer = "\nPlease report issues at https://github.com/SweetInk/wqxuetang-pdf-downloader";
-            formatter.printHelp("java -jar pdfd.jar", "\n", options, footer, true);
-            return;
-        }
-        String bookId = cmd.getOptionValue("b");
-        File configFile;
-        String configPath = cmd.getOptionValue("c");
-        if (null == configPath) {
-            String jarPath = App.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-            File classFile = new File(jarPath);
-            if (classFile.isDirectory()) {
-                configFile = new File(classFile, Constants.DEFAULT_CONFIG_FILE);
-            } else {
-                configFile = new File(classFile.getParent(), Constants.DEFAULT_CONFIG_FILE);
-            }
-        } else {
-            configFile = FileUtil.file(configPath);
-        }
-        Config config = null;
-        if (!configFile.isDirectory() && configFile.exists()) {
-            Props props = new Props(configFile);
-            config = props.toBean(Config.class, "config");
-            AppContext.setConfig(config);
-            log.info("配置文件:{}加载成功:\n{}", configFile.getAbsolutePath(), config);
-        } else {
-            log.error("配置文件:{}不存在，请检查路径是否正确", configFile.getAbsolutePath());
-            return;
-        }
-        CookieStore.COOKIE = config.getCookie();
+    public void start() {
+        Config config = AppContext.getConfig();
+        String bookId = config.getBookId();
         log.info("Fetch book info bookId:{} ", bookId);
-        BookMetaInfo metaInfo = ApiUtils.getBookMetaInfo(bookId);
-        // Expire at 5 minutes later;
-        String bookKey = ApiUtils.getBookKey(bookId);
-        AppContext.setBookKey(bookId, bookKey);
-        configKeyFetchTask(bookId);
-        log.info("meta:{}", metaInfo);
-        log.info("k:{}", bookKey);
-        ThreadPoolUtils.init(config.getThreadCount());
-        if (metaInfo.getVolumeList().size() > 0) {
-            handleMultipleVolume(metaInfo.getVolumeList());
-        } else {
-            handleSingleVolume(metaInfo);
+        try {
+            BookMetaInfo metaInfo = ApiUtils.getBookMetaInfo(bookId);
+            // Expire at 5 minutes later;
+            String bookKey = ApiUtils.getBookKey(bookId);
+            AppContext.setBookKey(bookId, bookKey);
+            configKeyFetchTask(bookId);
+            log.info("meta:{}", metaInfo);
+            log.info("k:{}", bookKey);
+            ThreadPoolUtils.init(config.getThreadCount());
+            if (metaInfo.getVolumeList().size() > 0) {
+                handleMultipleVolume(metaInfo.getVolumeList());
+            } else {
+                handleSingleVolume(metaInfo);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
         }
         ThreadPoolUtils.getScheduledExecutorService().shutdownNow();
         ThreadPoolUtils.getExecutor().shutdown();
+        System.exit(1);
     }
 
 
-    private static void configKeyFetchTask(String bookId) {
+    private void configKeyFetchTask(String bookId) {
         ThreadPoolUtils.getScheduledExecutorService().schedule(() -> {
             log.info("清理book:{} key", bookId);
             try {
@@ -95,7 +70,7 @@ public class App {
         }, 4, TimeUnit.MINUTES);
     }
 
-    public static void handleSingleVolume(BookMetaInfo metaInfo) throws IOException, InterruptedException {
+    public void handleSingleVolume(BookMetaInfo metaInfo) throws InterruptedException {
         long start = System.currentTimeMillis();
         String bookId = metaInfo.getBid();
         String volumeNumber = metaInfo.getNumber();
@@ -132,8 +107,13 @@ public class App {
         if (failedImageList.size() <= 0) {
             log.info("All image downloaded(total:{})", failedImageList.size());
             log.info("Ready for generate PDF");
-            PDFUtils.gen(metaInfo, catalogs, imageTempDir.getAbsolutePath());
-            log.info("All finished take :{}s", (System.currentTimeMillis() - start) / 1000);
+            try {
+                PDFUtils.gen(metaInfo, catalogs, imageTempDir.getAbsolutePath());
+                log.info("All finished take :{}s", (System.currentTimeMillis() - start) / 1000);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
         } else {
             ThreadPoolExecutor executor = ThreadPoolUtils.getExecutor();
             log.info("Start download image, bookName:{},totalPage:{}", metaInfo.getName(), failedImageList.size());
@@ -148,7 +128,12 @@ public class App {
             if (successCount == failedImageList.size()) {
                 log.info("All image downloaded");
                 log.info("Ready for generate PDF");
-                PDFUtils.gen(metaInfo, catalogs, imageTempDir.getAbsolutePath());
+                try {
+                    PDFUtils.gen(metaInfo, catalogs, imageTempDir.getAbsolutePath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
                 log.info("All finished take :{}s", (System.currentTimeMillis() - start) / 1000);
             } else {
                 AppContext.getImageStatusMapping().entrySet().stream().filter(entry -> !entry.getValue()).map(Map.Entry::getKey).forEach(pageNumber -> {
@@ -159,7 +144,7 @@ public class App {
         }
     }
 
-    public static void handleMultipleVolume(List<BookMetaInfo> volumeList) throws IOException, InterruptedException {
+    public void handleMultipleVolume(List<BookMetaInfo> volumeList) throws InterruptedException {
         for (BookMetaInfo volume : volumeList) {
             handleSingleVolume(volume);
         }

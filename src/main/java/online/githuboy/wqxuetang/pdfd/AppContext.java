@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import online.githuboy.wqxuetang.pdfd.pojo.Config;
+import online.githuboy.wqxuetang.pdfd.ui.WebContainer;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,6 +35,11 @@ public class AppContext {
     public static void setBookKey(String bookId, String key) {
         imgKCache.put(bookId, key);
     }
+
+
+    @Setter
+    @Getter
+    public static WebContainer webContainer;
 
     @Setter
     @Getter

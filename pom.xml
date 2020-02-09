@@ -10,7 +10,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
-
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-core</artifactId>
@@ -22,7 +21,6 @@
             <artifactId>hutool-http</artifactId>
             <version>5.1.1</version>
         </dependency>
-
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-json</artifactId>
@@ -130,8 +128,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <!-- 此处指定main方法入口的class -->
-                            <mainClass>online.githuboy.wqxuetang.pdfd.App</mainClass>
+                            <mainClass>online.githuboy.wqxuetang.pdfd.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

@@ -1,10 +1,14 @@
 package online.githuboy.wqxuetang.pdfd;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.Header;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
+import javafx.application.Platform;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import online.githuboy.wqxuetang.pdfd.utils.JwtUtils;
@@ -16,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -30,6 +35,7 @@ public class FetchBookImageTask implements Runnable {
     private int pageNumber;
     private CountDownLatch latch;
     private File baseDir;
+    private AtomicBoolean nvcResult = new AtomicBoolean(true);
     /**
      * 分区号
      */
@@ -45,6 +51,47 @@ public class FetchBookImageTask implements Runnable {
         if (!this.baseDir.exists()) {
             this.baseDir.mkdirs();
         }
+    }
+
+    private void requestNvc(CountDownLatch $latch) {
+        Platform.runLater(() -> {
+            Map<String, String> param = new HashMap<>();
+            String referUrl = "https://lib-nuanxin.wqxuetang.com/read/pdf/" + bookId;
+            param.put("bid", this.bookId);
+            param.put("pnum", this.pageNumber + "");
+            param.put("volume_no", StrUtil.isBlank(volumeNumber) ? "" : volumeNumber);
+            try {
+                String nvc = AppContext.getWebContainer().getNVC();
+                param.put("nvc", nvc);
+                HttpResponse response = HttpRequest.get(Constants.NVC + "?" + HttpUtil.toParams(param))
+                        .cookie(CookieStore.COOKIE)
+                        .header(Header.HOST, "lib-nuanxin.wqxuetang.com")
+                        .header("Sec-Fetch-Dest", "empty")
+                        .header("Sec-Fetch-Mode", "cors")
+                        .header(Header.REFERER, referUrl)
+                        .header("User", "bapkg/com.bookask.wqxuetang baver/1.1.1")
+                        .header(Header.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4041.0 Safari/537.36 Edg/81.0.410.1")
+                        .execute();
+                String body = response.body();
+                JSONObject object = JSONUtil.parseObj(body);
+                int code = object.getInt("errcode");
+                String msg = object.getStr("errmsg");
+                if (code != 0) {
+                    log.error("请求NVC出错 bookId:{},pageNumber:{},volumeNumber:{}, code:{},msg:{}", bookId, pageNumber, volumeNumber, code, msg);
+                } else {
+                    JSONObject data = object.getJSONObject("data");
+                    String bizCode = data.getStr("BizCode");
+                    if (!"200".equals(bizCode)) {
+                        nvcResult.set(false);
+                        log.info("NVC验证失败 bookId:{},pageNumber:{},volumeNumber:{},result:{}", bookId, pageNumber, volumeNumber, data.toString());
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                nvcResult.set(false);
+            }
+            $latch.countDown();
+        });
     }
 
     @Override
@@ -68,6 +115,12 @@ public class FetchBookImageTask implements Runnable {
             url = url + '?' + HttpUtil.toParams(paramMap);
             String referUrl = "https://lib-nuanxin.wqxuetang.com/read/pdf/" + bookId;
             AppContext.counter.incrementAndGet();
+            CountDownLatch $latch = new CountDownLatch(1);
+            requestNvc($latch);
+            $latch.await();
+            if (!nvcResult.get()) {
+                retry();
+            }
             HttpResponse response = HttpRequest.get(url)
                     .header(cn.hutool.http.Header.REFERER, referUrl)
                     .cookie(CookieStore.COOKIE)

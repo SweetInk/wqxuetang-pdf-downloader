@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FakePage</title>
+    <script>
+        window.NVC_Opt = {
+            appkey: "FFFF0N00000000007F28",
+            scene: "nvc_activity",
+            isH5: !1,
+            popUp: !1,
+            renderTo: "#captcha",
+            nvcCallback: function (e) {
+                document.body.style.overflow = "auto",
+                    t.disScroll = !1,
+                    t.setCurrentPnum()
+            },
+            trans: {
+                nvcCode: 200
+            },
+            language: "cn",
+            customWidth: 300,
+            width: 500,
+            height: 125,
+            elements: ["//img.alicdn.com/tfs/TB17cwllsLJ8KJjy0FnXXcFDpXa-50-74.png", "//img.alicdn.com/tfs/TB17cwllsLJ8KJjy0FnXXcFDpXa-50-74.png"],
+            bg_back_prepared: "//img.alicdn.com/tps/TB1skE5SFXXXXb3XXXXXXXXXXXX-100-80.png",
+            bg_front: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABQCAMAAADY1yDdAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAADUExURefk5w+ruswAAAAfSURBVFjD7cExAQAAAMKg9U9tCU+gAAAAAAAAAIC3AR+QAAFPlUGoAAAAAElFTkSuQmCC",
+            obj_ok: "//img.alicdn.com/tfs/TB1rmyTltfJ8KJjy0FeXXXKEXXa-50-74.png",
+            bg_back_pass: "//img.alicdn.com/tfs/TB1KDxCSVXXXXasXFXXXXXXXXXX-100-80.png",
+            obj_error: "//img.alicdn.com/tfs/TB1q9yTltfJ8KJjy0FeXXXKEXXa-50-74.png",
+            bg_back_fail: "//img.alicdn.com/tfs/TB1w2oOSFXXXXb4XpXXXXXXXXXX-100-80.png",
+            upLang: {
+                cn: {
+                    _ggk_guide: "请摁住鼠标左键，刮出两面盾牌",
+                    _ggk_success: "恭喜您成功刮出盾牌<br/>继续下一步操作吧",
+                    _ggk_loading: "加载中",
+                    _ggk_fail: ["呀，盾牌不见了<br/>请", "javascript:noCaptcha.reset()", "再来一次", "或", "https://survey.taobao.com/survey/QgzQDdDd?token=%TOKEN", "反馈问题"],
+                    _ggk_action_timeout: ["我等得太久啦<br/>请", "javascript:noCaptcha.reset()", "再来一次", "或", "https://survey.taobao.com/survey/QgzQDdDd?token=%TOKEN", "反馈问题"],
+                    _ggk_net_err: ["网络实在不给力<br/>请", "javascript:noCaptcha.reset()", "再来一次", "或", "https://survey.taobao.com/survey/QgzQDdDd?token=%TOKEN", "反馈问题"],
+                    _ggk_too_fast: ["您刮得太快啦<br/>请", "javascript:noCaptcha.reset()", "再来一次", "或", "https://survey.taobao.com/survey/QgzQDdDd?token=%TOKEN", "反馈问题"]
+                }
+            }
+        }
+    </script>
+
+</head>
+<body>
+<div id="captcha"></div>
+<button id="register">register</button>
+<h1>Hello,world</h1>
+</body>
+<!--<script type="javascript" src="guide.js"></script>-->
+<script src="http://g.alicdn.com/sd/nvc/1.1.112/guide.js"></script>
+<script>
+    function yourRegisterRequest(url, params) {
+        var callbackName = ('jsonp_' + Math.random()).replace('.', '');
+        params += '&callback=' + callbackName;
+        var o_scripts = document.getElementsByTagName("script")[0];
+        var o_s = document.createElement('script');
+        o_scripts.parentNode.insertBefore(o_s, o_scripts);
+        //您注册请求的业务回调。
+        window[callbackName] = function (json) {
+            if (json.result.code == 400) {
+                //唤醒滑动验证
+                getNC().then(function () {
+                    _nvc_nc.upLang('cn', {
+                        _startTEXT: "请按住滑块，拖动到最右边",
+                        _yesTEXT: "验证通过",
+                        _error300: "哎呀，出错了，点击<a href=\"javascript:__nc.reset()\">刷新</a>再来一次",
+                        _errorNetwork: "网络不给力，请<a href=\"javascript:__nc.reset()\">点击刷新</a>",
+                    })
+                    _nvc_nc.reset()
+                })
+            } else if (json.result.code == 600) {
+                //唤醒刮刮卡
+                getSC().then(function () {
+                })
+            } else if (json.result.code == 700) {
+                //唤醒问答验证码。由于问答验证码组件升级中，服务端暂时不会返回code为700的结果。您可以保留该部分的接入代码。
+                getLC();
+            } else if (json.result.code == 100 || json.result.code == 200) {
+                //注册成功
+                nvcReset();
+                alert("register success!")
+            } else if (json.result.code == 800 || json.result.code == 900) {
+                //直接拦截
+                nvcReset();
+                alert("register failed!")
+            }
+        };
+        o_s.src = url + '?' + params;
+    }
+
+    document.getElementById('register').onclick = function () {
+        //将以下getNVCVal()函数的值，跟随业务请求一起上传，由后端请求AnalyzeNvc接口并返回200，400，600或者800。
+        var params = 'a=' + getNVCVal();
+        alert(params);
+        yourRegisterRequest('http://cf.aliyun.com/nvc/nvcAnalyze.jsonp', params)
+    };
+
+    function getNvc() {
+        return getNVCVal();
+    }
+</script>
+</html>

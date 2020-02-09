@@ -38,4 +38,6 @@ public class Config {
      * 默认休眠时间
      */
     private Long defaultSleepTime = 1000L;
+
+    private String bookId;
 }

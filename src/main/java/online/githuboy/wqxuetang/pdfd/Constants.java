@@ -11,12 +11,13 @@ public class Constants {
 
     public static final String BOOK_KEY = "https://lib-nuanxin.wqxuetang.com/v1/read/k?bid={0}";
 
+    public static final String NVC = "https://lib-nuanxin.wqxuetang.com/v1/read/nvc";
     /**
      * 0 -> bookId
      * 1 -> pageNum
      * 2 -> key
      */
-    public static final String BOOK_IMG = "https://lib-nuanxin.wqxuetang.com/page/img/{0}/{1}";
+    public static final String BOOK_IMG = "https://lib-nuanxin.wqxuetang.com/page/lmg/{0}/{1}";
     /**
      * JWT签名密钥
      */

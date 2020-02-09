@@ -1,14 +1,13 @@
 package online.githuboy.wqxuetang.pdfd.api;
 
 import cn.hutool.core.util.CharsetUtil;
-import cn.hutool.http.HttpException;
-import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
-import cn.hutool.http.HttpUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.*;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
+import online.githuboy.wqxuetang.pdfd.AppContext;
 import online.githuboy.wqxuetang.pdfd.Constants;
 import online.githuboy.wqxuetang.pdfd.CookieStore;
 import online.githuboy.wqxuetang.pdfd.pojo.BookMetaInfo;
@@ -75,6 +74,26 @@ public class ApiUtils {
         String url = MessageFormat.format(Constants.BOOK_KEY, bid);
         JSONObject result = getAndCheck(url);
         return result.getJSONObject("data").toString();
+    }
+
+    public static String requestNvc(String bookId, String pageNumber, String volumeNumber) {
+        Map<String, String> param = new HashMap<>();
+        String referUrl = "https://lib-nuanxin.wqxuetang.com/read/pdf/" + bookId;
+        param.put("bid", bookId);
+        param.put("pnum", pageNumber);
+        param.put("volume_no", StrUtil.isBlank(volumeNumber) ? "" : volumeNumber);
+        String nvc = AppContext.getWebContainer().getNVC();
+        param.put("nvc", nvc);
+        String body = HttpRequest.get(Constants.NVC + "?" + HttpUtil.toParams(param))
+                .cookie(CookieStore.COOKIE)
+                .header(Header.HOST, "lib-nuanxin.wqxuetang.com")
+                .header("Sec-Fetch-Dest", "empty")
+                .header("Sec-Fetch-Mode", "cors")
+                .header("User", "bapkg/com.bookask.wqxuetang baver/1.1.1")
+                .header(Header.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4041.0 Safari/537.36 Edg/81.0.410.1")
+                .execute().body();
+        log.info("NVC Response:{}", body);
+        return null;
     }
 
     /**
