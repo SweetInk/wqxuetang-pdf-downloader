@@ -53,7 +53,6 @@ public class WebContainer {
         try {
             JSObject win = (JSObject) webEngine.executeScript("window");
             Object eval = win.eval("getNvc()");
-            System.out.println(eval);
             return (String) eval;
         } catch (Exception e) {
             e.printStackTrace();
