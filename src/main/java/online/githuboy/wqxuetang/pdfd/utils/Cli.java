@@ -1,6 +1,7 @@
 package online.githuboy.wqxuetang.pdfd.utils;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.URLUtil;
 import cn.hutool.setting.dialect.Props;
 import lombok.extern.slf4j.Slf4j;
 import online.githuboy.wqxuetang.pdfd.App;
@@ -38,6 +39,7 @@ public class Cli {
             String configPath = cmd.getOptionValue("c");
             if (null == configPath) {
                 String jarPath = App.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+                jarPath = URLUtil.decode(jarPath);
                 File classFile = new File(jarPath);
                 if (classFile.isDirectory()) {
                     configFile = new File(classFile, Constants.DEFAULT_CONFIG_FILE);
