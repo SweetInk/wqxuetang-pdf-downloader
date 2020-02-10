@@ -8,6 +8,7 @@ import online.githuboy.wqxuetang.pdfd.pojo.BookMetaInfo;
 import online.githuboy.wqxuetang.pdfd.pojo.Catalog;
 import online.githuboy.wqxuetang.pdfd.pojo.Config;
 import online.githuboy.wqxuetang.pdfd.utils.Cli;
+import online.githuboy.wqxuetang.pdfd.utils.FileChecker;
 import online.githuboy.wqxuetang.pdfd.utils.PDFUtils;
 import online.githuboy.wqxuetang.pdfd.utils.ThreadPoolUtils;
 
@@ -93,10 +94,11 @@ public class App {
         // 预先清理无效的图片
         Arrays.stream(Objects.requireNonNull(imageTempDir.listFiles())).forEach(file -> {
             long size = file.length();
-            if (size <= Constants.IMG_INVALID_SIZE
-                    || size == Constants.IMG_LOADING_SIZE) {
-                FileUtil.del(file);
-            }
+            FileChecker.check(size, invalid -> {
+                if (invalid) {
+                    FileUtil.del(file);
+                }
+            });
         });
         //列出已经下载好的图片列表
         List<Integer> strings = FileUtil.listFileNames(imageTempDir.getAbsolutePath()).stream().map(

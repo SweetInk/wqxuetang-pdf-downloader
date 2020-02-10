@@ -11,6 +11,7 @@ import cn.hutool.json.JSONUtil;
 import javafx.application.Platform;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import online.githuboy.wqxuetang.pdfd.utils.FileChecker;
 import online.githuboy.wqxuetang.pdfd.utils.JwtUtils;
 import online.githuboy.wqxuetang.pdfd.utils.ThreadPoolUtils;
 
@@ -174,21 +175,24 @@ public class FetchBookImageTask implements Runnable {
             } else {
                 outFile = FileUtil.file(baseDir, this.pageNumber + Constants.JPG_SUFFIX);
                 long size = response.writeBody(outFile, null);
-                if (size <= Constants.IMG_INVALID_SIZE
-                        || size == Constants.IMG_LOADING_SIZE) {
-                    log.info("Page:{} 下载的图片无效，大小为:{} byte", this.pageNumber, size);
-                    FileUtil.del(outFile);
-                    retry();
-                } else {
-                    log.info("page:{}下载完成,耗时:{}s", this.pageNumber, (System.currentTimeMillis() - start) / 1000.f);
-                    AppContext.getImageStatusMapping().put(String.valueOf(pageNumber), true);
-                    latch.countDown();
-                }
+                File finalOutFile = outFile;
+                FileChecker.check(size, invalid -> {
+                    if (invalid) {
+                        log.info("Page:{} 下载的图片无效，大小为:{} byte", this.pageNumber, size);
+                        FileUtil.del(finalOutFile);
+                        retry();
+                    } else {
+                        log.info("page:{}下载完成,耗时:{}s", this.pageNumber, (System.currentTimeMillis() - start) / 1000.f);
+                        AppContext.getImageStatusMapping().put(String.valueOf(pageNumber), true);
+                        latch.countDown();
+                    }
+                });
             }
         } catch (Exception e) {
             if (null != outFile)
                 FileUtil.del(outFile);
             log.error("图片:{} 下载异常:{}", pageNumber, e.getMessage());
+            e.printStackTrace();
             retry();
         } finally {
             try {
