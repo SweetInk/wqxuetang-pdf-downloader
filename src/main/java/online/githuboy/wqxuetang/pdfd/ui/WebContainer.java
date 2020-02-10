@@ -34,7 +34,7 @@ public class WebContainer {
         stackPane.setSpacing(20);
         stackPane.setSpacing(20);
         stackPane.getChildren().addAll(/*button,*/ browser);
-        initEngine();
+//        initEngine();
         //  initEvent();
     }
 
@@ -60,12 +60,13 @@ public class WebContainer {
         }
     }
 
-    private void initEngine() {
+    public void initEngine() {
         webEngine.load("http://localhost:8081/nvc");
         WebContainer ref = this;
         webEngine.getLoadWorker().stateProperty().addListener(
                 (ObservableValue<? extends Worker.State> ov, Worker.State oldState,
                  Worker.State newState) -> {
+                    log.info("oldState:{} -> newState:{}", oldState, newState);
                     if (newState == Worker.State.SUCCEEDED) {
                         try {
                             String nvc = getNVC();

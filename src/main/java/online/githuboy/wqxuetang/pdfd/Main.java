@@ -42,6 +42,7 @@ public class Main extends Application {
         scene.setRoot(stackPane);
         stage.setScene(scene);
         stage.show();
+        container.initEngine();
     }
 
     static class RequestHandler implements HttpHandler {
