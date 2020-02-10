@@ -85,9 +85,9 @@ public class WebContainer {
                             log.error("程序启动失败：", e);
                         }
 
-                    } else {
+                    } else if (newState == Worker.State.CANCELLED) {
                         log.error("加载授权url失败:{}", newState);
-//                        System.exit(1);
+                        System.exit(1);
                     }
                 });
     }
