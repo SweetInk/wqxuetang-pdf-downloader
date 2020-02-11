@@ -11,7 +11,7 @@ public class Constants {
 
     public static final String BOOK_KEY = "https://lib-nuanxin.wqxuetang.com/v1/read/k?bid={0}";
 
-    public static final String NVC = "https://lib-nuanxin.wqxuetang.com/v1/read/nvc";
+    public static final String NVC = "https://lib-nuanxin.wqxuetang.com/page/nvc";
     /**
      * 0 -> bookId
      * 1 -> pageNum

@@ -93,11 +93,10 @@ public class FetchBookImageTask implements Runnable {
             HttpResponse response = HttpRequest.get(Constants.NVC + "?" + HttpUtil.toParams(param))
                     .cookie(CookieStore.COOKIE)
                     .header(Header.HOST, "lib-nuanxin.wqxuetang.com")
-                    .header("Sec-Fetch-Dest", "empty")
-                    .header("Sec-Fetch-Mode", "cors")
+//                    .header("Sec-Fetch-Dest", "empty")
+//                    .header("Sec-Fetch-Mode", "cors")
                     .header(Header.REFERER, referUrl)
                     .timeout(8000)
-                    .header("User", "bapkg/com.bookask.wqxuetang baver/1.1.1")
                     .header(Header.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4041.0 Safari/537.36 Edg/81.0.410.1")
                     .execute();
             body = response.body();
@@ -112,6 +111,7 @@ public class FetchBookImageTask implements Runnable {
             String msg = object.getStr("errmsg");
             if (code != 0) {
                 log.error("请求NVC出错 bookId:{},pageNumber:{},volumeNumber:{}, code:{},msg:{}", bookId, pageNumber, volumeNumber, code, msg);
+                nvcResult.set(false);
             } else {
                 JSONObject data = object.getJSONObject("data");
                 String bizCode = data.getStr("BizCode");
