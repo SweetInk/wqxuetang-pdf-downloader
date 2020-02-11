@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class App {
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) {
         App app = new App();
         Cli cli = new Cli();
         cli.get(args);
@@ -100,9 +100,12 @@ public class App {
                 }
             });
         });
-        //列出已经下载好的图片列表
+        //列出已经下载好的图片列表w
         List<Integer> strings = FileUtil.listFileNames(imageTempDir.getAbsolutePath()).stream().map(
-                fileName -> Integer.parseInt(fileName.substring(0, fileName.lastIndexOf('.')))
+                fileName -> {
+                    String noSuffix = StrUtil.removeSuffix(fileName, Constants.JPG_SUFFIX);
+                    return Integer.parseInt(StrUtil.trim(noSuffix));
+                }
         ).sorted().collect(Collectors.toList());
         //之前成功下载的图片将会跳过
         List<Integer> failedImageList = pageMap.entrySet().stream().filter(entry -> !strings.contains(entry.getKey())).map(Map.Entry::getValue).collect(Collectors.toList());
